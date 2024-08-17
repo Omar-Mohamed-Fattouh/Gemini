@@ -24,7 +24,6 @@
     --secondary-hover-color: #DBE1EA;
 }
 
-
 body {
     background: var(--primary-color);
 }
@@ -47,10 +46,11 @@ body {
     /* display: none; */
 }
 
-body.hide-header .header{
+body.hide-header .header {
     display: none;
     margin-top: 0;
 }
+
 .header :where(.title, .subtitle) {
     font-weight: 500;
     line-height: 3.6rem;
@@ -75,7 +75,7 @@ body.hide-header .header{
     list-style: none;
     display: flex;
     gap: 1.25rem;
-    overflow-x: none;
+    overflow-x: auto;
     scrollbar-width: none;
 }
 
@@ -112,12 +112,11 @@ body.hide-header .header{
     background: var(--primary-color);
 }
 
-
 .chat-list {
     padding: 2rem 1rem 12rem;
     max-height: 100vh;
     overflow-y: auto;
-    scrollbar-color: #999 ;
+    scrollbar-color: #999;
 }
 
 .chat-list .message.incoming {
@@ -148,14 +147,13 @@ body.hide-header .header{
         transform: rotate(360deg);
     }
 }
-
-.chat-list .message .text.error {
-
-color: #e55865;
-}
-.chat-list .message .text.error {
+.chat-list .message .text {
     color: var(--text-color);
 }
+.chat-list .message .text.error {
+    color: #e55865;
+}
+
 .chat-list .message.loading .text {
     display: none;
 }
@@ -193,7 +191,6 @@ color: #e55865;
     display: flex;
 }
 
-
 .chat-list .loading-indicator .loading-bar {
     height: 11px;
     width: 100%;
@@ -210,7 +207,6 @@ color: #e55865;
     0% {
         background-position: -800px 0;
     }
-
     100% {
         background-position: 800px 0;
     }
@@ -293,33 +289,64 @@ color: #e55865;
     color: var(--placeholder-color);
 }
 
-@media (max-width:768px){
-    .header :is(.title, .subtitle){
+@media (max-width: 768px) {
+    .header :where(.title, .subtitle) {
         font-size: 2rem;
         line-height: 2.6rem;
     }
-    .header .subtitle{
+    .header .subtitle {
         font-size: 1.7rem;
     }
-    .chat-list .message .avater{
+    .chat-list .message .avater {
         width: 37px;
         height: 37px;
     }
-    .typing-area :where(.typing-form,.actions-button){
+    .typing-area :where(.typing-form, .action-buttons) {
         gap: 0.4rem;
     }
-    .typing-form .input-wrapper{
+    .typing-form .input-wrapper {
         height: 50px;
     }
-    .typing-form .typing-input{
+    .typing-form .typing-input {
         padding: 1.1rem 3.5rem 1.1rem 1.2rem;
     }
-    .typing-area .icon{
+    .typing-area .icon {
         height: 50px;
         width: 50px;
     }
-    .typing-area .disclaimer-text{
+    .typing-area .disclaimer-text {
         font-size: 0.75rem;
         margin-top: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header :where(.title, .subtitle) {
+        font-size: 1.8rem;
+        line-height: 2.4rem;
+    }
+    .header .subtitle {
+        font-size: 1.5rem;
+    }
+    .suggestion-list {
+        gap: 0.75rem;
+        margin-top: 7vh;
+    }
+    .suggestion-list .suggestion {
+        width: auto;
+        padding: 0.75rem;
+    }
+    .chat-list {
+        padding: 1rem 0.5rem 10rem;
+    }
+    .typing-area .input-wrapper {
+        height: 45px;
+    }
+    .typing-area .typing-input {
+        padding: 1rem 3rem 1rem 1rem;
+    }
+    .typing-area .icon {
+        height: 45px;
+        width: 45px;
     }
 }
