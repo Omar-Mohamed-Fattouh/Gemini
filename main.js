@@ -1,13 +1,15 @@
 const typingForm = document.querySelector(".typing-form");
 const chatList = document.querySelector(".chat-list");
-const suggestions = document.querySelectorAll(".suggestion-list .suggestion");
+const suggestons = document.querySelectorAll(".suggestion-list .suggestion");
 const toggleThemeButton = document.querySelector("#toggle-theme-button");
 const deleteChatButton = document.querySelector("#delete-chat-button");
 
 let userMessage = null;
 let isResponseGenerating = false;
-const API_KEY = "AIzaSyAmo0hP-ZsWNwgcndk2o1MYRk0598Q0j-I";
-const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`;
+
+// ✅ Correct Gemini API endpoint (v1beta)
+const API_KEY = "AIzaSyAmo0hP-ZsWNwgcndk2o1MYRk0598Q0j-I"; // Replace with your actual key
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
 const loadLocalStorageData = () => {
   const savedChats = localStorage.getItem("savedChats");
@@ -61,6 +63,7 @@ const generateAPIResponse = async (incomingMessageDiv) => {
 
     const data = await response.json();
     if (!response.ok) throw new Error(data.error.message);
+
     const apiResponse = data.candidates[0].content.parts[0].text.replace(/\*(.*?)\*/g, "$1");
     console.log(apiResponse);
     showTypingeffect(apiResponse, textElement, incomingMessageDiv);
@@ -75,15 +78,16 @@ const generateAPIResponse = async (incomingMessageDiv) => {
 
 const showLoadingAnimation = () => {
   const html = `<div class="message-content">
-          <img src="images/gemini.svg" alt="Bot Image" class="avater" />
-          <p class="text"></p>
-          <div class="loading-indicator">
-            <div class="loading-bar"></div>
-            <div class="loading-bar"></div>
-            <div class="loading-bar"></div>
-          </div>
-        </div>
-        <span onClick="copyMessage(this)" class="icon material-symbols-rounded">content_copy</span>`;
+      <img src="images/gemini.svg" alt="Bot Image" class="avater" />
+      <p class="text"></p>
+      <div class="loading-indicator">
+        <div class="loading-bar"></div>
+        <div class="loading-bar"></div>
+        <div class="loading-bar"></div>
+      </div>
+    </div>
+    <span onClick="copyMessage(this)" class="icon material-symbols-rounded">content_copy</span>`;
+
   const incomingMessageDiv = createMessageElement(html, "incoming", "loading");
   chatList.appendChild(incomingMessageDiv);
   chatList.scrollTo(0, chatList.scrollHeight);
@@ -101,12 +105,14 @@ const copyMessage = (copyIcon) => {
 const handleOutgoingChat = () => {
   userMessage = typingForm.querySelector(".typing-input").value.trim() || userMessage;
   if (!userMessage || isResponseGenerating) return;
+
   isResponseGenerating = true;
 
   const html = `<div class="message-content">
-          <img src="images/user.jpg" alt="User Image" class="avater" />
-          <p class="text"></p>
-        </div>`;
+      <img src="images/user.jpg" alt="User Image" class="avater" />
+      <p class="text"></p>
+    </div>`;
+
   const outgoingMessageDiv = createMessageElement(html, "outgoing");
   outgoingMessageDiv.querySelector(".text").innerHTML = userMessage;
   chatList.appendChild(outgoingMessageDiv);
@@ -117,9 +123,9 @@ const handleOutgoingChat = () => {
   setTimeout(showLoadingAnimation, 500);
 };
 
-suggestions.forEach((suggestion) => {
-  suggestion.addEventListener("click", () => {
-    userMessage = suggestion.querySelector(".text").innerText;
+suggestons.forEach((suggeston) => {
+  suggeston.addEventListener("click", () => {
+    userMessage = suggeston.querySelector(".text").innerText;
     handleOutgoingChat();
   });
 });
