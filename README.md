@@ -12,4 +12,4 @@ python -m http.server 5500
 
 Then visit [http://localhost:5500](http://localhost:5500).
 
-If replies fail because of a rate limit or invalid key, click the key icon and paste a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+On first launch, paste a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey). The bundled demo key is out of quota, so replies will not work until you add your own.

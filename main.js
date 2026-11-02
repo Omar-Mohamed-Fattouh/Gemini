@@ -4,22 +4,53 @@ const suggestions = document.querySelectorAll(".suggestion-list .suggestion");
 const toggleThemeButton = document.querySelector("#toggle-theme-button");
 const deleteChatButton = document.querySelector("#delete-chat-button");
 const apiKeyButton = document.querySelector("#api-key-button");
+const apiSetup = document.querySelector("#api-setup");
+const apiKeyInput = document.querySelector("#api-key-input");
+const apiKeySave = document.querySelector("#api-key-save");
 
 let userMessage = null;
 let isResponseGenerating = false;
 let chatHistory = [];
 
 const DEFAULT_API_KEY = "AIzaSyAmo0hP-ZsWNwgcndk2o1MYRk0598Q0j-I";
-const MODELS = ["gemini-flash-latest", "gemini-3.8-flash"];
+const MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.6-flash",
+  "gemini-flash-latest",
+];
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const getApiKey = () => localStorage.getItem("geminiApiKey") || DEFAULT_API_KEY;
 
-const apiUrlFor = (model) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${getApiKey()}`;
+const hasUserApiKey = () => Boolean(localStorage.getItem("geminiApiKey"));
+
+const showApiSetup = () => {
+  apiSetup.hidden = false;
+  apiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
+  apiKeyInput.focus();
+};
+
+const hideApiSetup = () => {
+  apiSetup.hidden = true;
+};
+
+const requestContent = (model, contents) =>
+  fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": getApiKey(),
+      },
+      body: JSON.stringify({ contents }),
+    }
+  );
 
 const friendlyError = (message) => {
   if (/quota exceeded|resource exhausted|rate/i.test(message)) {
-    return "This API key hit its rate limit. Wait a minute, or click the key icon and paste a key from Google AI Studio.";
+    return "Gemini is rate-limited right now. Click the key icon, paste a free key from Google AI Studio, then send again.";
   }
   if (/api key|permission|unauthorized|invalid/i.test(message)) {
     return "The Gemini API key is missing or invalid. Click the key icon and paste a key from Google AI Studio.";
@@ -35,7 +66,14 @@ const loadLocalStorageData = () => {
   document.body.classList.toggle("light_mode", isLightMode);
   toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
   chatList.innerHTML = savedChats || "";
-  document.body.classList.toggle("hide-header", Boolean(savedChats));
+  chatList.querySelectorAll(".message.loading").forEach((message) => {
+    message.classList.remove("loading");
+    const text = message.querySelector(".text");
+    if (text && !text.innerText.trim()) {
+      message.remove();
+    }
+  });
+  document.body.classList.toggle("hide-header", Boolean(chatList.innerHTML.trim()));
   chatList.scrollTo(0, chatList.scrollHeight);
 
   try {
@@ -92,33 +130,50 @@ const extractText = (data) => {
     .trim();
 };
 
+const isNotFound = (status, message) =>
+  status === 404 || /not found|not supported/i.test(message);
+
+const isRateLimited = (status, message) =>
+  status === 429 ||
+  status === 503 ||
+  /quota exceeded|resource exhausted|rate|high demand|unavailable|try again later/i.test(
+    message
+  );
+
 const generateAPIResponse = async (incomingMessageDiv) => {
   const textElement = incomingMessageDiv.querySelector(".text");
   let lastError = null;
 
   try {
-    chatHistory.push({
-      role: "user",
-      parts: [{ text: userMessage }],
-    });
+    const contents = [
+      ...chatHistory,
+      { role: "user", parts: [{ text: userMessage }] },
+    ];
 
     for (const model of MODELS) {
-      try {
-        const response = await fetch(apiUrlFor(model), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: chatHistory }),
-        });
-
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const response = await requestContent(model, contents);
         const data = await response.json();
+        const message =
+          data?.error?.message || `Request failed (${response.status})`;
+
+        if (isRateLimited(response.status, message)) {
+          lastError = new Error(message);
+          if (attempt === 2) throw lastError;
+          const waitMs = 25000 * (attempt + 1);
+          textElement.innerText = `Gemini is busy. Retrying in ${waitMs / 1000}s...`;
+          textElement.classList.remove("error");
+          incomingMessageDiv.classList.remove("loading");
+          await sleep(waitMs);
+          incomingMessageDiv.classList.add("loading");
+          textElement.innerText = "";
+          continue;
+        }
+
         if (!response.ok) {
-          const message = data?.error?.message || `Request failed (${response.status})`;
-          const notFound = response.status === 404 || /not found|not supported/i.test(message);
-          if (notFound) {
-            lastError = new Error(message);
-            continue;
-          }
-          throw new Error(message);
+          lastError = new Error(message);
+          if (isNotFound(response.status, message)) break;
+          throw lastError;
         }
 
         const apiResponse = extractText(data);
@@ -126,30 +181,27 @@ const generateAPIResponse = async (incomingMessageDiv) => {
           throw new Error("Gemini returned an empty response. Try another prompt.");
         }
 
-        chatHistory.push({
+        chatHistory = contents.concat({
           role: "model",
           parts: [{ text: apiResponse }],
         });
 
         showTypingEffect(apiResponse, textElement, incomingMessageDiv);
         return;
-      } catch (error) {
-        lastError = error;
-        if (!/not found|not supported/i.test(error.message)) throw error;
       }
     }
 
     throw lastError || new Error("No available Gemini model could answer this prompt.");
   } catch (error) {
     isResponseGenerating = false;
-    chatHistory = chatHistory.filter(
-      (item, index) => !(index === chatHistory.length - 1 && item.role === "user")
-    );
     textElement.innerText = friendlyError(error.message);
     textElement.classList.add("error");
-    persistChat();
+    if (isRateLimited(0, error.message) || /api key|invalid/i.test(error.message)) {
+      showApiSetup();
+    }
   } finally {
     incomingMessageDiv.classList.remove("loading");
+    persistChat();
   }
 };
 
@@ -182,6 +234,10 @@ const handleOutgoingChat = () => {
   userMessage =
     typingForm.querySelector(".typing-input").value.trim() || userMessage;
   if (!userMessage || isResponseGenerating) return;
+  if (!hasUserApiKey()) {
+    showApiSetup();
+    return;
+  }
 
   isResponseGenerating = true;
 
@@ -208,17 +264,23 @@ suggestions.forEach((suggestion) => {
   });
 });
 
-apiKeyButton.addEventListener("click", () => {
-  const nextKey = prompt(
-    "Paste your Gemini API key from Google AI Studio:",
-    localStorage.getItem("geminiApiKey") || ""
-  );
-  if (nextKey === null) return;
-  const trimmed = nextKey.trim();
-  if (trimmed) localStorage.setItem("geminiApiKey", trimmed);
-  else localStorage.removeItem("geminiApiKey");
-  alert(trimmed ? "API key saved in this browser." : "API key cleared. The default key will be used.");
+apiKeyButton.addEventListener("click", showApiSetup);
+
+apiKeySave.addEventListener("click", () => {
+  const trimmed = apiKeyInput.value.trim();
+  if (!trimmed) {
+    apiKeyInput.focus();
+    return;
+  }
+  localStorage.setItem("geminiApiKey", trimmed);
+  hideApiSetup();
 });
+
+apiKeyInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") apiKeySave.click();
+});
+
+if (!hasUserApiKey()) showApiSetup();
 
 toggleThemeButton.addEventListener("click", () => {
   const isLightMode = document.body.classList.toggle("light_mode");

@@ -28,6 +28,67 @@ body {
     background: var(--primary-color);
 }
 
+.api-setup {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.api-setup[hidden] {
+    display: none;
+}
+
+.api-setup-card {
+    width: min(440px, 100%);
+    padding: 1.75rem;
+    border-radius: 1rem;
+    background: var(--secondary-color);
+    color: var(--text-color);
+}
+
+.api-setup-card h2 {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.api-setup-card p {
+    color: var(--subheading-color);
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+}
+
+.api-setup-card a {
+    color: #8ab4f8;
+}
+
+.api-setup-card input {
+    width: 100%;
+    height: 48px;
+    border: none;
+    outline: none;
+    border-radius: 0.75rem;
+    padding: 0 1rem;
+    color: var(--text-color);
+    background: var(--primary-color);
+}
+
+.api-setup-card button {
+    width: 100%;
+    margin-top: 0.85rem;
+    height: 48px;
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #fff;
+    background: #4285f4;
+}
+
 .header,
 .typing-area {
     color: var(--text-color);

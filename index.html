@@ -13,6 +13,23 @@
     />
   </head>
   <body>
+    <div class="api-setup" id="api-setup" hidden>
+      <div class="api-setup-card">
+        <h2>Connect Gemini</h2>
+        <p>
+          The demo API key is out of quota. Paste a free key from
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>
+          to start chatting.
+        </p>
+        <input
+          id="api-key-input"
+          type="password"
+          placeholder="Paste your Gemini API key"
+          autocomplete="off"
+        />
+        <button type="button" id="api-key-save">Save and continue</button>
+      </div>
+    </div>
     <!-- Header Greetings -->
     <header class="header">
       <!-- Header Greeting -->
